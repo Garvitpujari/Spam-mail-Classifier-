@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spam Mail Classifier • Demo & Guide</title>
+  <meta name="description" content="Learn about spam vs ham, best safety practices, and try the spam classifier live." />
+  <style>
+    :root{
+      --bg:#0f172a;          /* slate-900 */
+      --card:#111827;        /* gray-900 */
+      --muted:#94a3b8;       /* slate-400 */
+      --text:#e2e8f0;        /* slate-200 */
+      --accent:#22d3ee;      /* cyan-400 */
+      --ok:#22c55e;          /* green-500 */
+      --warn:#f59e0b;        /* amber-500 */
+      --danger:#ef4444;      /* red-500 */
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, 'Helvetica Neue', Arial, 'Apple Color Emoji','Segoe UI Emoji';}
+    a{color:var(--accent); text-decoration:none}
+    .wrapper{max-width:1100px; margin:0 auto; padding:24px}
+    header{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px 0}
+    .brand{display:flex; align-items:center; gap:12px}
+    .logo{width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg, #22d3ee, #a78bfa); display:grid; place-items:center; box-shadow:var(--shadow)}
+    .logo span{font-weight:800; color:#0b1020}
+    .cta{display:flex; gap:10px; flex-wrap:wrap}
+    .btn{background:var(--accent); color:#0b1020; border:none; border-radius:14px; padding:10px 14px; font-weight:700; cursor:pointer; box-shadow:var(--shadow)}
+    .btn.secondary{background:#1f2937; color:var(--text); border:1px solid #334155}
+
+    .hero{display:grid; grid-template-columns: 1.2fr 1fr; gap:28px; padding:8px 0 28px}
+    .card{background:var(--card); border:1px solid #1f2937; border-radius:18px; padding:20px; box-shadow:var(--shadow)}
+    h1{font-size:clamp(26px, 5vw, 40px); margin:8px 0 12px}
+    p.lead{color:var(--muted); font-size:1.05rem; line-height:1.55}
+
+    .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin:28px 0}
+    .tile{background:var(--card); border:1px solid #1f2937; border-radius:18px; padding:18px; box-shadow:var(--shadow)}
+    .tile h3{margin:0 0 8px}
+    .badge{display:inline-block; padding:6px 10px; border-radius:999px; font-size:.8rem; font-weight:700; background:#0b1020; border:1px solid #334155; color:var(--muted)}
+
+    .try{display:grid; grid-template-columns:1fr; gap:12px}
+    textarea{width:100%; min-height:140px; resize:vertical; border-radius:14px; background:#0b1020; color:var(--text); padding:14px; border:1px solid #334155; outline:none}
+    textarea:focus{border-color:var(--accent)}
+    .result{padding:14px; border-radius:14px; border:1px solid #334155; background:#0b1020}
+    .label{font-weight:800; padding:6px 10px; border-radius:999px}
+    .label.ham{background:rgba(34,197,94,.15); color:var(--ok); border:1px solid rgba(34,197,94,.35)}
+    .label.spam{background:rgba(239,68,68,.15); color:var(--danger); border:1px solid rgba(239,68,68,.35)}
+    .muted{color:var(--muted)}
+
+    footer{margin:40px 0 10px; color:#94a3b8; font-size:.9rem; display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+
+    @media (max-width: 900px){
+      .hero{grid-template-columns:1fr}
+      .grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <header>
+      <div class="brand">
+        <div class="logo"><span>✉️</span></div>
+        <div>
+          <div style="font-weight:800; font-size:1.1rem;">Spam Mail Classifier</div>
+          <div class="muted" style="font-size:.9rem;">by Garvit Pujari • FastAPI on Hugging Face</div>
+        </div>
+      </div>
+      <div class="cta">
+        <a class="btn secondary" href="https://garvitpujari-mail-classifier.hf.space" target="_blank" rel="noreferrer">Open API</a>
+        <button class="btn" onclick="document.getElementById('try').scrollIntoView({behavior:'smooth'})">Try it</button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="card">
+        <h1>Is this email <span style="color:var(--accent)">Spam</span> or <span style="color:var(--ok)">Ham</span>?</h1>
+        <p class="lead">This page explains how spam works, what signs to look for, and lets you test a machine-learning model that classifies emails using TF-IDF + Logistic Regression.</p>
+        <div class="grid" style="margin-top:18px">
+          <div class="tile">
+            <div class="badge">What is Spam?</div>
+            <h3>Unsolicited or deceptive emails</h3>
+            <p class="muted">Often includes scams, phishing, fake prizes, or aggressive marketing. Goal: get you to click, pay, or share personal info.</p>
+          </div>
+          <div class="tile">
+            <div class="badge">Common Signs</div>
+            <ul class="muted" style="margin:8px 0 0 18px; line-height:1.6">
+              <li>Urgent language or threats (“act now”, “final notice”).</li>
+              <li>Unknown sender or mismatched domains.</li>
+              <li>Spelling/grammar errors; suspicious links/attachments.</li>
+              <li>Requests for passwords, OTPs, or payments.</li>
+            </ul>
+          </div>
+          <div class="tile">
+            <div class="badge">Model Overview</div>
+            <h3>TF-IDF + Logistic Regression</h3>
+            <p class="muted">Email text is converted to numeric features via TF-IDF; a trained classifier predicts <strong>Spam</strong> (0) or <strong>Ham</strong> (1).</p>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="try">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px">
+          <h2 style="margin:0">Try the Classifier</h2>
+          <span class="badge">Live Demo</span>
+        </div>
+        <div class="try">
+          <label for="mail" class="muted">Paste an email message:</label>
+          <textarea id="mail"></textarea>
+          <div style="display:flex; gap:10px; flex-wrap:wrap">
+            <button class="btn" id="predictBtn">Classify</button>
+            <button class="btn secondary" id="exampleBtn">Use example</button>
+          </div>
+          <div class="result" id="result" hidden>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap">
+              <div id="labelWrap"></div>
+              <div id="cautionMsg" style="font-size:.9rem;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="tile">
+        <div class="badge">Stay Safe</div>
+        <ul class="muted" style="margin:8px 0 0 18px; line-height:1.6">
+          <li>Don’t click unknown links or download unexpected attachments.</li>
+          <li>Verify sender addresses; beware look-alike domains.</li>
+          <li>Never share passwords/OTP; banks won’t ask by email.</li>
+          <li>Enable spam filters and 2-factor authentication.</li>
+        </ul>
+      </div>
+      <div class="tile">
+        <div class="badge">Limitations</div>
+        <p class="muted">ML models aren’t perfect. Borderline or novel spam may slip through. Combine automated detection with human judgment.</p>
+      </div>
+      <div class="tile">
+        <div class="badge">API Quickstart</div>
+        <p class="muted">Use <code>/predict</code> endpoint with JSON body <code>{"message": "your text"}</code> to classify via API.</p>
+      </div>
+    </section>
+
+    <footer>
+      <span>© 2025 Garvit Pujari</span>
+      <span>•</span>
+      <a href="https://garvitpujari-mail-classifier.hf.space" target="_blank" rel="noreferrer">Open API</a>
+      <span>•</span>
+      <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'})">Back to top</a>
+    </footer>
+  </div>
+
+  <script>
+    const API_URL = 'https://garvitpujari-mail-classifier.hf.space/predict';
+    const btn = document.getElementById('predictBtn');
+    const exampleBtn = document.getElementById('exampleBtn');
+    const ta = document.getElementById('mail');
+    const result = document.getElementById('result');
+    const labelWrap = document.getElementById('labelWrap');
+    const cautionMsg = document.getElementById('cautionMsg');
+
+    exampleBtn.addEventListener('click', () => {
+      ta.value = "Thanks for your subscription to Ringtone UK. Your mobile will be charged £5/month. Please confirm by replying YES or NO.";
+      result.hidden = true;
+    });
+
+    btn.addEventListener('click', async () => {
+      const message = (ta.value || '').trim();
+      if (!message) { alert('Please paste an email message first.'); return; }
+      btn.disabled = true; btn.textContent = 'Classifying…';
+      result.hidden = true; labelWrap.innerHTML = ''; cautionMsg.textContent = '';
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        if (!res.ok) throw new Error('Request failed: ' + res.status);
+        const data = await res.json();
+        const isHam = Number(data.prediction) === 1 || /ham/i.test(data.label);
+
+        labelWrap.innerHTML = `<span class="label ${isHam ? 'ham' : 'spam'}">${isHam ? 'Ham (Not Spam)' : 'Spam'}</span>`;
+        cautionMsg.textContent = isHam ? "✅ No worries" : "⚠️ Caution";
+        result.hidden = false;
+      } catch (err) {
+        alert('Error calling API: ' + err.message + '\nIf this page is hosted on a different domain, enable CORS in FastAPI.');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Classify';
+      }
+    });
+  </script>
+</body>
+</html>
